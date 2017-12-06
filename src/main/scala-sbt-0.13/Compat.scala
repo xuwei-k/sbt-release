@@ -68,4 +68,7 @@ object Compat {
   val KeyIndex = sbt.KeyIndex
   type LoadedBuildUnit = sbt.LoadedBuildUnit
 
+  private[sbtrelease] implicit class ProcessBuilderOps(val self: scala.sys.process.ProcessBuilder) {
+    def lineStream = self.lines
+  }
 }
