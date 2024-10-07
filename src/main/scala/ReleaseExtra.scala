@@ -1,6 +1,6 @@
 package sbtrelease
 
-import sbt._
+import sbt.{given, _}
 import sbt.Keys._
 import sbt.Package.ManifestAttributes
 import annotation.tailrec
@@ -16,8 +16,8 @@ object ReleaseStateTransformations {
     val thisRef = st.extract.get(thisProjectRef)
     val (newSt, result) = Compat.runTaskAggregated(thisRef / releaseSnapshotDependencies, st)
     val snapshotDeps = result match {
-      case Value(value) => value.flatMap(_.value)
-      case Inc(cause) => sys.error("Error checking for snapshot dependencies: " + cause)
+      case Result.Value(value) => value.flatMap(_.value)
+      case Result.Inc(cause) => sys.error("Error checking for snapshot dependencies: " + cause)
     }
     if (snapshotDeps.nonEmpty) {
       val useDefaults = extractDefault(newSt, "n")

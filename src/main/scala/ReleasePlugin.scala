@@ -1,7 +1,7 @@
 package sbtrelease
 
 import java.io.Serializable
-import sbt.*
+import sbt.{given, *}
 import Keys.*
 import sbt.complete.DefaultParsers.*
 import sbt.complete.Parser
@@ -72,7 +72,7 @@ object ReleasePlugin extends AutoPlugin {
       val config = extractedTaskConfig(extracted, extracted.structure, st)
       withStreams(extracted.structure, st) { str =>
         val nv = nodeView(st, str, key :: Nil)
-        val (newS, result) = runTask(task, st, str, extracted.structure.index.triggers, config)(nv)
+        val (newS, result) = runTask(task, st, str, extracted.structure.index.triggers, config)(using nv)
         (newS, processResult2(result))
       }._1
     }

@@ -1,6 +1,6 @@
 package sbtrelease
 
-import sbt._
+import sbt.{ _, given }
 import sbt.Def.ScopedKey
 import sbt.EvaluateTask.{extractedTaskConfig, nodeView, runTask, withStreams}
 import sbt.Keys._
@@ -29,7 +29,7 @@ object Compat {
 
     val (newS, result) = withStreams(extracted.structure, state){ str =>
       val transform = nodeView(state, str, roots, extra)
-      runTask(toRun, state,str, extracted.structure.index.triggers, config)(transform)
+      runTask(toRun, state,str, extracted.structure.index.triggers, config)(using transform)
     }
     (newS, result)
   }

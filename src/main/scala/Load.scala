@@ -16,10 +16,21 @@ object Load {
   def reapply(newSettings: Seq[Setting[_]], structure: BuildStructure)(implicit display: Show[ScopedKey[_]]): BuildStructure =
   {
     val transformed = finalTransforms(newSettings)
-    val newData = Def.make(transformed)(structure.delegates, structure.scopeLocal, display)
+    val (cMap, newData) = Def.makeWithCompiledMap(transformed)(using structure.delegates, structure.scopeLocal, display)
     val newIndex = structureIndex(newData, transformed, index => BuildUtil(structure.root, structure.units, index, newData), structure.units)
     val newStreams = BuildStreams.mkStreams(structure.units, structure.root, newData)
-    new BuildStructure(units = structure.units, root = structure.root, settings = transformed, data = newData, index = newIndex, streams = newStreams, delegates = structure.delegates, scopeLocal = structure.scopeLocal)
+    new BuildStructure(
+      units = structure.units,
+      root = structure.root,
+      settings = transformed,
+      data = newData,
+      index = newIndex,
+      streams = newStreams,
+      delegates = structure.delegates,
+      scopeLocal = structure.scopeLocal,
+      compiledMap = cMap,
+      converter = null, // TODO
+    )
   }
 
   // map dependencies on the special tasks:
@@ -29,8 +40,8 @@ object Load {
   // Note: this must be idempotent.
   def finalTransforms(ss: Seq[Setting[_]]): Seq[Setting[_]] =
   {
-    def mapSpecial(to: ScopedKey[_]) = new (ScopedKey ~> ScopedKey) {
-      def apply[T](key: ScopedKey[T]) =
+    def mapSpecial(to: ScopedKey[_]): [a] => ScopedKey[a] => ScopedKey[a] = { [a] =>
+      (key: ScopedKey[a]) =>
         if (key.key == streams.key)
           ScopedKey(Scope.fillTaskAxis(Scope.replaceThis(to.scope)(key.scope), to.key), key.key)
         else key
@@ -40,10 +51,10 @@ object Load {
       case ik: InputTask[t] => ik.mapTask(tk => setDefinitionKey(tk, key)).asInstanceOf[T]
       case _                => value
     }
-    def setResolved(defining: ScopedKey[_]) = new (ScopedKey ~> Option) {
-      def apply[T](key: ScopedKey[T]): Option[T] =
+    def setResolved(defining: ScopedKey[_]): [a] => ScopedKey[a] => Option[a] = { [a] =>
+      (key: ScopedKey[a]) =>
         key.key match {
-          case resolvedScoped.key => Some(defining.asInstanceOf[T])
+          case resolvedScoped.key => Some(defining.asInstanceOf[a])
           case _                  => None
         }
     }
@@ -54,7 +65,7 @@ object Load {
     val keys = Index.allKeys(settings)
     val attributeKeys = Index.attributeKeys(data) ++ keys.map(_.key)
     val scopedKeys = keys ++ data.allKeys((s, k) => ScopedKey(s, k)).toVector
-    val projectsMap = projects.mapValues(_.defined.keySet)
+    val projectsMap = projects.map { case (k, v) => k -> v.defined.keySet }
     val configsMap: Map[String, Seq[Configuration]] =
       projects.values.flatMap(bu => bu.defined map { case (k, v) => (k, v.configurations) }).toMap
     val keyIndex = keyIndexApply(scopedKeys.toVector, projectsMap, configsMap)

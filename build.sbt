@@ -3,6 +3,15 @@ lazy val `sbt-release` = project in file(".")
 organization := "com.github.sbt"
 name := "sbt-release"
 
+crossScalaVersions += "3.3.4"
+
+pluginCrossBuild / sbtVersion := {
+  scalaBinaryVersion.value match {
+    case "2.12" => sbtVersion.value
+    case _      => "2.0.0-M2"
+  }
+}
+
 homepage := Some(url("https://github.com/sbt/sbt-release"))
 licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0"))
 
