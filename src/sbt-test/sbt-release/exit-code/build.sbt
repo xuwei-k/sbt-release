@@ -11,8 +11,15 @@ failingTask :=  {throw new IllegalStateException("Meh")}
 
 def checkExitCode(rp: String)(expected: Int) = {
   val releaseProcess =
-    Process("sbt", Seq(s"-Dplugin.version=${System.getProperty("plugin.version")}",
-      s"set releaseProcess := $rp ; release with-defaults")
+    Process(
+      "java",
+      Seq(
+        "-jar",
+        java.lang.management.ManagementFactory.getRuntimeMXBean.getClassPath,
+        "clean",
+        s"-Dplugin.version=${System.getProperty("plugin.version")}",
+        s"set releaseProcess := $rp ; release with-defaults"
+      )
     )
 
   val exitValue = releaseProcess.!
