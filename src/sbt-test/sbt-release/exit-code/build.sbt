@@ -10,6 +10,8 @@ val failingTask = taskKey[Unit]("A task that will fail")
 failingTask :=  {throw new IllegalStateException("Meh")}
 
 def checkExitCode(rp: String)(expected: Int) = {
+  println(java.lang.management.ManagementFactory.getRuntimeMXBean.getClassPath)
+
   val releaseProcess =
     Process(
       "java",
